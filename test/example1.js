@@ -77,6 +77,17 @@ chai.addAssertion('age', function(obj, assert, flag) {
 });
 
 // Do the tests
+describe('New assertions', function() {
+    it('should not be added if they already exist', function() {
+        var noop = function() {};
+        expect(function() {
+            chai.addAssertion('contain', noop);
+        }).to.throw(TypeError);
+        expect(function() {
+            chai.addAssertion('above', noop, noop);
+        }).to.throw(TypeError);
+    });
+});
 
 describe('Property model', function() {
     it('should be successfully added', function() {

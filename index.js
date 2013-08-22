@@ -77,6 +77,12 @@ var assert = function(expr, msg, neg_msg, expected, actual) {
  *                                  as a property. If set, a chainable method is created.
  */
 function addAssertion(name, func, getter) {
+    // First make sure an assertion with this name doesn't already exist.
+    var ass = new Assertion(1);
+    if (ass[name] !== undefined) {
+        throw new TypeError('Assertion "' + name + '" already exists');
+    }
+
     var method, getterWrapper;
 
     if (getter) {
