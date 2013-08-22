@@ -22,6 +22,10 @@ var arthur = new Model('person');
 arthur.set('name', 'Arthur Dent');
 arthur.set('occupation', 'traveller');
 arthur.set('age', 27);
+arthur.set('id', 42);
+
+var joe = new Model('dog');
+joe.set('id', 'not a number');
 
 // Define custom assertions
 
@@ -74,6 +78,44 @@ chai.addAssertion('age', function(obj, assert, flag) {
     };
 }, function(flag) {
     flag('model.age', true);
+});
+
+// Extend property `ok`
+chai.extendAssertion('ok', function(obj, assert, flag) {
+    return function() {
+        if (obj && obj instanceof Model) {
+            assert(obj).to.have.deep.property('_attrs.id');
+            assert(obj._attrs.id, 'model assert ok id type').flags().a('number');
+            return true;
+        } else {
+            return false;
+        }
+    };
+});
+
+// Extend method `above`
+chai.extendAssertion('above', function(obj, assert, flag) {
+    return function(n) {
+        if (flag('model.age')) {
+            // first we assert we are actually working with a model
+            assert(obj).instanceof(Model);
+
+            // next, make sure we have an age
+            assert(obj).to.have.deep.property('_attrs.age').a('number');
+
+            // now we compare
+            var age = obj.get('age');
+            assert(
+                age > n
+                , "expected #{this} to have an age above #{exp} but got #{act}"
+                , "expected #{this} to not have an age above #{exp} but got #{act}"
+                , n
+                , age
+            );
+            return true;
+        }
+        return false;
+    };
 });
 
 // Do the tests
@@ -144,6 +186,37 @@ describe('Chainable method age', function() {
     it('should behave as expected', function() {
         expect(arthur).to.have.age(27);
         expect(arthur).to.have.age.above(17);
-        expect(arthur).to.not.have.age.below(18);
+    });
+});
+
+describe('Overwritten method above', function() {
+    it('should behave as before when model.age flag is not present', function() {
+        expect(20).to.be.above(10);
+        expect(function() {
+            expect(10).to.be.above(20);
+        }).to.throw();
+    });
+});
+
+describe('Overwritten property ok', function() {
+    it('should behave as expected for Model instances', function() {
+        expect(arthur).to.be.ok;
+        expect(joe).to.be.not.ok;
+        expect(function() {
+            expect(arthur).to.be.not.ok;
+        }).to.throw();
+        expect(function() {
+            expect(joe).to.be.ok;
+        }).to.throw();
+    });
+    it('should behave as before for other values', function() {
+        expect(true).to.be.ok;
+        expect(false).to.be.not.ok;
+        expect(function() {
+            expect(true).to.be.not.ok;
+        }).to.throw();
+        expect(function() {
+            expect(false).to.be.ok;
+        }).to.throw();
     });
 });

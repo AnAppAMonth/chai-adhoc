@@ -8,9 +8,9 @@ chai.use(function (_chai, utilities) {
 });
 
 /**
- * Function provided by the user in an `addAssertion` call.
+ * Function provided by the user in `addAssertion()` and `extendAssertion()` calls.
  *
- * @callback addAssertionCallback
+ * @callback assertionCallback
  * @param {*} obj - Subject of the assertion
  * @param {function} assert - Function to assert conditions or create assertion objects.
  * @param {function} flag - Function to get and set flags.
@@ -22,16 +22,6 @@ chai.use(function (_chai, utilities) {
  *
  * @callback getterCallback
  * @param {function} flag - Function to get and set flags.
- */
-
-/**
- * Callback provided by the user in an `wrapAssertion` call.
- *
- * @callback wrapAssertionCallback
- * @param {*} obj - Subject of the assertion
- * @param {function} assert - Function to assert conditions or create assertion objects.
- * @param {function} flag - Function to get and set flags.
- * @param {function} super - F
  */
 
 var flag = function(name, value) {
@@ -72,7 +62,7 @@ var assert = function(expr, msg, neg_msg, expected, actual) {
  * Add a new assertion.
  *
  * @param {string} name - Name of the new assertion.
- * @param {addAssertionCallback} func - Function to be called to define the assertion.
+ * @param {assertionCallback} func - Function to be called to define the assertion.
  * @param {getterCallback} getter - Function to be called when the assertion is accessed
  *                                  as a property. If set, a chainable method is created.
  */
@@ -89,7 +79,7 @@ function addAssertion(name, func, getter) {
         method = 'addChainableMethod';
         getterWrapper = function() {
             return getter(flag.bind(this));
-        }
+        };
     } else {
         // Call the function to see how many parameters its returned function expects.
         // This decides whether we should add a property or a method.
@@ -103,8 +93,35 @@ function addAssertion(name, func, getter) {
     }, getterWrapper);
 }
 
-function extendAssertion() {
+/**
+ * Extend an existing assertion.
+ *
+ * Note that the function returned by calling `func()`, the function to be used for
+ * the extension of the assertion, must return a truthy value if it has implemented
+ * the assertion for the subject; or a falsy value if the subject doesn't meet its
+ * criteria and `_super()` should be called.
+ *
+ * @param {string} name - Name of the assertion to extend.
+ * @param {assertionCallback} func - Function to be called to define the extension.
+ */
+function extendAssertion(name, func) {
+    // Check whether the assertion to be overwritten is a property or a method.
+    var ass = new Assertion(1),
+        method;
+    if (ass[name] === undefined) {
+        throw new TypeError('Assertion "' + name + '" doesn\'t exist');
+    } else {
+        method = typeof ass[name] === 'function' ? 'overwriteMethod' : 'overwriteProperty';
+    }
 
+    return Assertion[method](name, function(_super) {
+        return function() {
+            var fn = func(this._obj, assert.bind(this), flag.bind(this));
+            if (!fn.apply(this, arguments)) {
+                _super.apply(this, arguments);
+            }
+        };
+    });
 }
 
 function wrapAssertion() {
