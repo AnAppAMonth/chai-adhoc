@@ -30,106 +30,94 @@ joe.set('id', 'not a number');
 // Define custom assertions
 
 // Property `model`
-chai.addAssertion('model', function(obj, assert, flag) {
-    return function() {
-        assert(
-            obj instanceof Model
-            , 'expected #{this} to be a Model'
-            , 'expected #{this} to not be a Model'
-        );
-    };
+chai.addAssertion('model', function(ctx) {
+    ctx.assert(
+        ctx.obj instanceof Model
+        , 'expected #{this} to be a Model'
+        , 'expected #{this} to not be a Model'
+    );
 });
 
 // Method `model2`
 var flagList = [];
-chai.addAssertion('model2', function(obj, assert, flag) {
-    return function(type) {
-        flagList.push(flag('negate'));
-        assert(obj, 'model type check').flags().to.be.instanceof(Model);
-        assert(obj, 'model type check').flags('negate').to.be.instanceof(Model);
-        assert(
-            obj._type === type
-            , "expected #{this} to be of type #{exp} but got #{act}"
-            , "expected #{this} to not be of type #{act}"
-            , type        // expected
-            , obj._type   // actual
-        );
-    };
+chai.addAssertion('model2', function(ctx, type) {
+    flagList.push(ctx.flag('negate'));
+    ctx.expect(ctx.obj, 'model type check').flags().to.be.instanceof(Model);
+    ctx.expect(ctx.obj, 'model type check').flags('negate').to.be.instanceof(Model);
+    ctx.assert(
+        ctx.obj._type === type
+        , "expected #{this} to be of type #{exp} but got #{act}"
+        , "expected #{this} to not be of type #{act}"
+        , type        // expected
+        , ctx.obj._type   // actual
+    );
 });
 
 // Chainable method `age`
-chai.addAssertion('age', function(obj, assert, flag) {
-    return function(n) {
-        // make sure we are working with a model
-        assert(obj).to.be.instanceof(Model);
+chai.addAssertion('age', function(ctx, n) {
+    // make sure we are working with a model
+    ctx.expect(ctx.obj).to.be.instanceof(Model);
 
-        // make sure we have an age and its a number
-        var age = obj.get('age');
-        assert(age).to.be.a('number');
+    // make sure we have an age and its a number
+    var age = ctx.obj.get('age');
+    ctx.expect(age).to.be.a('number');
 
-        // do our comparison
-        assert(
-            age === n
-            , "expected #{this} to have have #{exp} but got #{act}"
-            , "expected #{this} to not have age #{act}"
-            , n
-            , age
-        );
-    };
+    // do our comparison
+    ctx.assert(
+        age === n
+        , "expected #{this} to have have #{exp} but got #{act}"
+        , "expected #{this} to not have age #{act}"
+        , n
+        , age
+    );
 }, function(flag) {
     flag('model.age', true);
 });
 
 // Extend property `ok`
-chai.extendAssertion('ok', function(obj, assert, flag) {
-    return function() {
-        if (obj && obj instanceof Model) {
-            assert(obj).to.have.deep.property('_attrs.id');
-            assert(obj._attrs.id, 'model assert ok id type').flags().a('number');
-            return true;
-        } else {
-            return false;
-        }
-    };
+chai.extendAssertion('ok', function(ctx) {
+    if (ctx.obj && ctx.obj instanceof Model) {
+        ctx.expect(ctx.obj).to.have.deep.property('_attrs.id');
+        ctx.expect(ctx.obj._attrs.id, 'model assert ok id type').flags().a('number');
+        return true;
+    } else {
+        return false;
+    }
 });
 
 // Extend method `above`
-chai.extendAssertion('above', function(obj, assert, flag) {
-    return function(n) {
-        if (flag('model.age')) {
-            // first we assert we are actually working with a model
-            assert(obj).instanceof(Model);
+chai.extendAssertion('above', function(ctx, n) {
+    if (ctx.flag('model.age')) {
+        // first we assert we are actually working with a model
+        ctx.expect(ctx.obj).instanceof(Model);
 
-            // next, make sure we have an age
-            assert(obj).to.have.deep.property('_attrs.age').a('number');
+        // next, make sure we have an age
+        ctx.expect(ctx.obj).to.have.deep.property('_attrs.age').a('number');
 
-            // now we compare
-            var age = obj.get('age');
-            assert(
-                age > n
-                , "expected #{this} to have an age above #{exp} but got #{act}"
-                , "expected #{this} to not have an age above #{exp} but got #{act}"
-                , n
-                , age
-            );
-            return true;
-        }
-        return false;
-    };
+        // now we compare
+        var age = ctx.obj.get('age');
+        ctx.assert(
+            age > n
+            , "expected #{this} to have an age above #{exp} but got #{act}"
+            , "expected #{this} to not have an age above #{exp} but got #{act}"
+            , n
+            , age
+        );
+        return true;
+    }
+    return false;
 });
 
 // Wrap the extended method `above`
-chai.wrapAssertion('above', function(obj, assert, flag) {
-    return function(error, n) {
-        if (error) {
-            // Suppress the error if both operands are > 10000.
-            if (obj > 10000 && n > 10000) {
-                return true;
-            }
-            error.message  = 'Custom prefix: ' + error.message;
+chai.wrapAssertion('above', function(error, ctx, n) {
+    if (error) {
+        // Suppress the error if both operands are > 10000.
+        if (ctx.obj > 10000 && n > 10000) {
+            return true;
         }
-        return false;
-    };
+        error.message  = 'Custom prefix: ' + error.message;
+    }
+    return false;
 });
 
 // Do the tests

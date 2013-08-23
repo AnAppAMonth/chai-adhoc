@@ -8,20 +8,56 @@ chai.use(function (_chai, utilities) {
 });
 
 /**
- * Function provided by the user in `addAssertion()` and `extendAssertion()` calls.
+ * Function provided by the user in an `addAssertion()` call.
  *
- * @callback assertionCallback
- * @param {*} obj - Subject of the assertion
- * @param {function} assert - Function to assert conditions or create assertion objects.
- * @param {function} flag - Function to get and set flags.
- * @returns {function} Function to be used for the new assertion.
+ * @callback addAssertionCallback
+ * @param {Object} ctx - An object containg context variables and methods to help you
+ *                       implement the assertion. Its members include:
+ *                       1. `obj`: the subject of the assertion
+ *                       2. `expect()`: start Chai language chains. The difference between
+ *                                      it and `chai.expect()` is that its returned assertion
+ *                                      object has an extra method `flags()`, which can be
+ *                                      called to transfer all or specified flags from the
+ *                                      language chain in which this new assertion is called,
+ *                                      to this chain.
+ *                       3. `assert()`: an alias of `this.assert()`.
+ *                       4. `flag()`: an alias of `utils.flag()`, with its first argument
+ *                                    bound to `this`.
+ * @param {...*} [args] - Arguments to the assertion function. For properties, there should
+ *                        be none; for methods, there should be at least one.
  */
 
 /**
- * Getter provided by the user in an `addAssertion` call.
+ * Getter provided by the user in an `addAssertion()` call.
  *
  * @callback getterCallback
  * @param {function} flag - Function to get and set flags.
+ */
+
+/**
+ * Function provided by the user in an `extendAssertion()` call.
+ *
+ * @callback extendAssertionCallback
+ * @param {Object} ctx - See `addAssertionCallback`.
+ * @param {...*} [args] - See `addAssertionCallback`. But unlike `addAssertion()`,
+ *                        this doesn't decide whether we overwrite a property or a
+ *                        method: it depends on whether the existing member with the
+ *                        given name is a property or a method.
+ * @returns {boolean} Must return truthy if the assertion has been evaluated for the
+ *                    subject, or falsy if it hasn't, in which case `_super()` is called.
+ */
+
+/**
+ * Function provided by the user in a `wrapAssertion()` call.
+ *
+ * @callback wrapAssertionCallback
+ * @param {Object|undefined} error - Either an error object if the assertion failed, or
+ *                                   undefined if the assertion succeeded.
+ * @param {Object} ctx - See `addAssertionCallback`.
+ * @param {...*} [args] - Arguments passed to the assertion function.
+ * @returns {boolean} If returns falsy, and if the assertion failed, the error object will
+ *                    be rethrown. Return truthy if you want to suppress the error.
+ *                    BE CAREFUL not to accidentally return truthy and suppress the error!
  */
 
 var flag = function(name, value) {
@@ -32,42 +68,39 @@ var flag = function(name, value) {
     }
 };
 
-var assert = function(expr, msg, neg_msg, expected, actual) {
-    if (neg_msg) {
-        // Should call this.assert().
-        return this.assert(expr, msg, neg_msg, expected, actual);
-    } else {
-        // Should create new `Assertion`.
-        var ass = new Assertion(expr, msg);
+// Create a new `Assertion` with an extra `flags()` method.
+var expect = function(expr, msg, neg_msg, expected, actual) {
+    var ass = new Assertion(expr, msg);
 
-        var that = this;
-        var flags = function() {
-            if (arguments.length === 0) {
-                // Transfer all flags.
-                utils.transferFlags(that, ass, false);
-            } else {
-                // Only transfer the specified flags.
-                for (var i = 0; i < arguments.length; i++) {
-                    utils.flag(ass, arguments[i], utils.flag(that, arguments[i]));
-                }
+    var that = this;
+    var flags = function() {
+        if (arguments.length === 0) {
+            // Transfer all flags.
+            utils.transferFlags(that, ass, false);
+        } else {
+            // Only transfer the specified flags.
+            for (var i = 0; i < arguments.length; i++) {
+                utils.flag(ass, arguments[i], utils.flag(that, arguments[i]));
             }
-            return ass;
-        };
-
-        if (ass.flags === undefined) {
-            ass.flags = flags;
-        } else if (ass.adhocFlags === undefined) {
-            ass.adhocFlags = flags;
         }
         return ass;
+    };
+
+    if (ass.flags === undefined) {
+        ass.flags = flags;
+    } else if (ass.adhocFlags === undefined) {
+        ass.adhocFlags = flags;
     }
+    return ass;
 };
 
 /**
  * Add a new assertion.
  *
  * @param {string} name - Name of the new assertion.
- * @param {assertionCallback} func - Function to be called to define the assertion.
+ * @param {addAssertionCallback} func - Function to implement the assertion. If this function
+ *                                   takes only one argument (the context object), a property
+ *                                   is created; otherwise a method is created.
  * @param {getterCallback} getter - Function to be called when the assertion is accessed
  *                                  as a property. If set, a chainable method is created.
  */
@@ -86,24 +119,27 @@ function addAssertion(name, func, getter) {
             return getter(flag.bind(this));
         };
     } else {
-        // Call the function to see how many parameters its returned function expects.
-        // This decides whether we should add a property or a method.
-        var test = func(1, assert, flag);
-        method = test.length ? 'addMethod' : 'addProperty';
+        method = func.length > 1 ? 'addMethod' : 'addProperty';
     }
 
     return Assertion[method](name, function() {
-        var fn = func(this._obj, assert.bind(this), flag.bind(this));
-        return fn.apply(this, arguments);
+        var ctx = {
+            obj: this._obj,
+            expect: expect.bind(this),
+            assert: this.assert.bind(this),
+            flag: flag.bind(this)
+        };
+        var args = [].slice.call(arguments);
+        args.unshift(ctx);
+        return func.apply(this, args);
     }, getterWrapper);
 }
 
 /**
  * Extend an existing assertion.
  *
- * Note that the function returned by calling `func()`, the function to be used for
- * the extension of the assertion, must return a truthy value if it has implemented
- * the assertion for the subject; or a falsy value if the subject doesn't meet its
+ * NOTE that `func()` must return a truthy value if it has implemented the
+ * assertion for the subject; or a falsy value if the subject doesn't meet its
  * criteria and `_super()` should be called.
  *
  * TODO: the `adhoc.super` flag. If you use an assertion when extending it, your
@@ -116,7 +152,7 @@ function addAssertion(name, func, getter) {
  * cases for this scenario before I can decide.
  *
  * @param {string} name - Name of the assertion to extend.
- * @param {assertionCallback} func - Function to be called to define the extension.
+ * @param {extendAssertionCallback} func - Function to implement the extension.
  */
 function extendAssertion(name, func) {
     // Check whether the assertion to be overwritten is a property or a method.
@@ -130,8 +166,15 @@ function extendAssertion(name, func) {
 
     return Assertion[method](name, function(_super) {
         return function() {
-            var fn = func(this._obj, assert.bind(this), flag.bind(this));
-            if (!fn.apply(this, arguments)) {
+            var ctx = {
+                obj: this._obj,
+                expect: expect.bind(this),
+                assert: this.assert.bind(this),
+                flag: flag.bind(this)
+            };
+            var args = [].slice.call(arguments);
+            args.unshift(ctx);
+            if (!func.apply(this, args)) {
                 _super.apply(this, arguments);
             }
         };
@@ -153,7 +196,7 @@ function extendAssertion(name, func) {
  * rethrow the error unless you want to suppress it.
  *
  * @param {string} name - Name of the assertion to wrap.
- * @param {assertionCallback} func - Function to be called to define the wrapper.
+ * @param {wrapAssertionCallback} func - The wrapper function.
  */
 function wrapAssertion(name, func) {
     // Check whether the assertion to be overwritten is a property or a method.
@@ -173,10 +216,17 @@ function wrapAssertion(name, func) {
             } catch (e) {
                 error = e;
             }
-            var fn = func(this._obj, assert.bind(this), flag.bind(this));
+
+            var ctx = {
+                obj: this._obj,
+                expect: expect.bind(this),
+                assert: this.assert.bind(this),
+                flag: flag.bind(this)
+            };
             var args = [].slice.call(arguments);
+            args.unshift(ctx);
             args.unshift(error);
-            if (!fn.apply(this, args)) {
+            if (!func.apply(this, args)) {
                 if (error) {
                     throw error;
                 }

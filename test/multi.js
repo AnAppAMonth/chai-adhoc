@@ -5,74 +5,62 @@ var chai = require('../'),
     expect = require('chai').expect;
 
 // Extend `below` 3 times
-chai.extendAssertion('below', function(obj, assert, flag) {
-    return function(n) {
-        if (obj >= 1000 && n >= 1000) {
-            // Require a difference of at least 100 for `below` to pass
-            assert(
-                obj+100 < n
-                , "expected #{this} to be below " + n
-                , "expected #{this} to not be below " + n
-            );
-            return true;
-        }
-        return false;
-    };
+chai.extendAssertion('below', function(ctx, n) {
+    if (ctx.obj >= 1000 && n >= 1000) {
+        // Require a difference of at least 100 for `below` to pass
+        ctx.assert(
+            ctx.obj + 100 < n
+            , "expected #{this} to be below " + n
+            , "expected #{this} to not be below " + n
+        );
+        return true;
+    }
+    return false;
 });
 
-chai.extendAssertion('below', function(obj, assert, flag) {
-    return function(n) {
-        if (obj >= 5000 && n >= 5000) {
-            // Require a difference of at least 500 for `below` to pass
-            assert(
-                obj+500 < n
-                , "expected #{this} to be below " + n
-                , "expected #{this} to not be below " + n
-            );
-            return true;
-        }
-        return false;
-    };
+chai.extendAssertion('below', function(ctx, n) {
+    if (ctx.obj >= 5000 && n >= 5000) {
+        // Require a difference of at least 500 for `below` to pass
+        ctx.assert(
+            ctx.obj + 500 < n
+            , "expected #{this} to be below " + n
+            , "expected #{this} to not be below " + n
+        );
+        return true;
+    }
+    return false;
 });
 
-chai.extendAssertion('below', function(obj, assert, flag) {
-    return function(n) {
-        if (obj >= 10000 && n >= 10000) {
-            // Require a difference of at least 1000 for `below` to pass
-            assert(
-                obj+1000 < n
-                , "expected #{this} to be below " + n
-                , "expected #{this} to not be below " + n
-            );
-            return true;
-        }
-        return false;
-    };
+chai.extendAssertion('below', function(ctx, n) {
+    if (ctx.obj >= 10000 && n >= 10000) {
+        // Require a difference of at least 1000 for `below` to pass
+        ctx.assert(
+            ctx.obj + 1000 < n
+            , "expected #{this} to be below " + n
+            , "expected #{this} to not be below " + n
+        );
+        return true;
+    }
+    return false;
 });
 
 // Wrap `below` 3 times
-chai.wrapAssertion('below', function(obj, assert, flag) {
-    return function(error, n) {
-        if (error) {
-            error.message  = 'Prefix 1: ' + error.message;
-        }
-    };
+chai.wrapAssertion('below', function(error, ctx, n) {
+    if (error) {
+        error.message  = 'Prefix 1: ' + error.message;
+    }
 });
 
-chai.wrapAssertion('below', function(obj, assert, flag) {
-    return function(error, n) {
-        if (error) {
-            error.message  = 'Prefix 2: ' + error.message;
-        }
-    };
+chai.wrapAssertion('below', function(error, ctx, n) {
+    if (error) {
+        error.message  = 'Prefix 2: ' + error.message;
+    }
 });
 
-chai.wrapAssertion('below', function(obj, assert, flag) {
-    return function(error, n) {
-        if (error) {
-            error.message  = 'Prefix 3: ' + error.message;
-        }
-    };
+chai.wrapAssertion('below', function(error, ctx, n) {
+    if (error) {
+        error.message  = 'Prefix 3: ' + error.message;
+    }
 });
 
 describe('Multiple extensions to assertion below', function() {
