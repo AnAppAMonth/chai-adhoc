@@ -124,8 +124,49 @@ function extendAssertion(name, func) {
     });
 }
 
-function wrapAssertion() {
+/**
+ * Wrap an existing assertion.
+ *
+ * The difference between this function and `extendAssertion()` is that `extendAssertion()`
+ * is called before `_super()` is called, to allow you handle certain types of operands
+ * differently than `_super()`; this function is called after `_super()` is called, to
+ * allow you handle `_super()`'s result. For example, if `_super()` throws an error, you
+ * can change its message, or even suppress it if so desired.
+ *
+ * If `_super()` throws an error and your supplied function returns a falsy value, the
+ * error is automatically rethrown. The convention is to return false if you don't want
+ * to handle this situation, or return true if you do. In the latter case, you must manually
+ * rethrow the error unless you want to suppress it.
+ *
+ * @param {string} name - Name of the assertion to wrap.
+ * @param {assertionCallback} func - Function to be called to define the wrapper.
+ */
+function wrapAssertion(name, func) {
+    // Check whether the assertion to be overwritten is a property or a method.
+    var ass = new Assertion(1),
+        method;
+    if (ass[name] === undefined) {
+        throw new TypeError('Assertion "' + name + '" doesn\'t exist');
+    } else {
+        method = typeof ass[name] === 'function' ? 'overwriteMethod' : 'overwriteProperty';
+    }
 
+    return Assertion[method](name, function(_super) {
+        return function() {
+            var error;
+            try {
+                _super.apply(this, arguments);
+            } catch (e) {
+                error = e;
+            }
+            var fn = func(this._obj, assert.bind(this), flag.bind(this));
+            var args = [].slice.call(arguments);
+            args.unshift(error);
+            if (!fn.apply(this, args)) {
+                throw error;
+            }
+        };
+    });
 }
 
 module.exports = {

@@ -118,6 +118,20 @@ chai.extendAssertion('above', function(obj, assert, flag) {
     };
 });
 
+// Wrap the extended method `above`
+chai.wrapAssertion('above', function(obj, assert, flag) {
+    return function(error, n) {
+        if (error) {
+            // Suppress the error if both operands are > 10000.
+            if (obj > 10000 && n > 10000) {
+                return true;
+            }
+            error.message  = 'Custom prefix: ' + error.message;
+        }
+        return false;
+    };
+});
+
 // Do the tests
 describe('New assertions', function() {
     it('should not be added if they already exist', function() {
@@ -127,6 +141,21 @@ describe('New assertions', function() {
         }).to.throw(TypeError);
         expect(function() {
             chai.addAssertion('above', noop, noop);
+        }).to.throw(TypeError);
+    });
+});
+
+describe('Non-existent assertions', function() {
+    it('should not be extended', function() {
+        var noop = function() {};
+        expect(function() {
+            chai.extendAssertion('idontexist', noop);
+        }).to.throw(TypeError);
+    });
+    it('should not be wrapped', function() {
+        var noop = function() {};
+        expect(function() {
+            chai.wrapAssertion('idontexist', noop);
         }).to.throw(TypeError);
     });
 });
@@ -185,7 +214,21 @@ describe('Chainable method age', function() {
     });
     it('should behave as expected', function() {
         expect(arthur).to.have.age(27);
+        expect(arthur).to.not.have.age(20);
         expect(arthur).to.have.age.above(17);
+        expect(arthur).to.not.have.age.above(37);
+        expect(function() {
+            expect(arthur).to.not.have.age(27);
+        }).to.throw();
+        expect(function() {
+            expect(arthur).to.have.age(20);
+        }).to.throw();
+        expect(function() {
+            expect(arthur).to.not.have.age.above(17);
+        }).to.throw();
+        expect(function() {
+            expect(arthur).to.have.age.above(37);
+        }).to.throw();
     });
 });
 
@@ -218,5 +261,21 @@ describe('Overwritten property ok', function() {
         expect(function() {
             expect(false).to.be.ok;
         }).to.throw();
+    });
+});
+
+describe('Wrapped method above', function() {
+    it('should suppress errors for operands > 10000', function() {
+        expect(function() {
+            expect(9000).to.be.above(9500);
+        }).to.throw();
+        expect(function() {
+            expect(10100).to.be.above(10500);
+        }).to.not.throw();
+    });
+    it('should prepend the custom message to errors thrown', function() {
+        expect(function() {
+            expect(100).to.be.above(200);
+        }).to.throw(/^Custom prefix: /);
     });
 });
