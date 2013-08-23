@@ -60,13 +60,6 @@ chai.use(function (_chai, utilities) {
  *                    BE CAREFUL not to accidentally return truthy and suppress the error!
  */
 
-var flag = function(name, value) {
-    if (arguments.length >= 2) {
-        return utils.flag(this, name, value);
-    } else {
-        return utils.flag(this, name);
-    }
-};
 
 // Create a new `Assertion` with an extra `flags()` method.
 var expect = function(expr, msg, neg_msg, expected, actual) {
@@ -116,7 +109,7 @@ function addAssertion(name, func, getter) {
     if (getter) {
         method = 'addChainableMethod';
         getterWrapper = function() {
-            return getter(flag.bind(this));
+            return getter(utils.flag.bind(utils, this));
         };
     } else {
         method = func.length > 1 ? 'addMethod' : 'addProperty';
@@ -127,7 +120,7 @@ function addAssertion(name, func, getter) {
             obj: this._obj,
             expect: expect.bind(this),
             assert: this.assert.bind(this),
-            flag: flag.bind(this)
+            flag: utils.flag.bind(utils, this)
         };
         var args = [].slice.call(arguments);
         args.unshift(ctx);
@@ -170,7 +163,7 @@ function extendAssertion(name, func) {
                 obj: this._obj,
                 expect: expect.bind(this),
                 assert: this.assert.bind(this),
-                flag: flag.bind(this)
+                flag: utils.flag.bind(utils, this)
             };
             var args = [].slice.call(arguments);
             args.unshift(ctx);
@@ -221,7 +214,7 @@ function wrapAssertion(name, func) {
                 obj: this._obj,
                 expect: expect.bind(this),
                 assert: this.assert.bind(this),
-                flag: flag.bind(this)
+                flag: utils.flag.bind(utils, this)
             };
             var args = [].slice.call(arguments);
             args.unshift(ctx);
