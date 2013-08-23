@@ -177,7 +177,9 @@ function wrapAssertion(name, func) {
             var args = [].slice.call(arguments);
             args.unshift(error);
             if (!fn.apply(this, args)) {
-                throw error;
+                if (error) {
+                    throw error;
+                }
             }
         };
     });
