@@ -39,20 +39,25 @@ var assert = function(expr, msg, neg_msg, expected, actual) {
     } else {
         // Should create new `Assertion`.
         var ass = new Assertion(expr, msg);
-        if (ass.flags === undefined) {
-            var that = this;
-            ass.flags = function() {
-                if (arguments.length === 0) {
-                    // Transfer all flags.
-                    utils.transferFlags(that, ass, false);
-                } else {
-                    // Only transfer the specified flags.
-                    for (var i = 0; i < arguments.length; i++) {
-                        utils.flag(ass, arguments[i], utils.flag(that, arguments[i]));
-                    }
+
+        var that = this;
+        var flags = function() {
+            if (arguments.length === 0) {
+                // Transfer all flags.
+                utils.transferFlags(that, ass, false);
+            } else {
+                // Only transfer the specified flags.
+                for (var i = 0; i < arguments.length; i++) {
+                    utils.flag(ass, arguments[i], utils.flag(that, arguments[i]));
                 }
-                return ass;
-            };
+            }
+            return ass;
+        };
+
+        if (ass.flags === undefined) {
+            ass.flags = flags;
+        } else if (ass.adhocFlags === undefined) {
+            ass.adhocFlags = flags;
         }
         return ass;
     }
