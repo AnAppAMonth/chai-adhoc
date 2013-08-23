@@ -129,6 +129,45 @@ function addAssertion(name, func, getter) {
 }
 
 /**
+ * Add a simple assertion.
+ *
+ * Simple assertions don't take the `negate` flag into consideration: they
+ * simply fail if the flag is present. These assertions are simple to write,
+ * and a good replacement for test functions that are created to reuse a group
+ * of tests on different subjects.
+ *
+ * @param {string} name - Name of the new assertion.
+ * @param {addAssertionCallback} func - Function to implement the assertion. If this function
+ *                                   takes only one argument (the context object), a property
+ *                                   is created; otherwise a method is created.
+ */
+function addSimple(name, func) {
+    // First make sure an assertion with this name doesn't already exist.
+    var ass = new Assertion(1);
+    if (ass[name] !== undefined) {
+        throw new TypeError('Assertion "' + name + '" already exists');
+    }
+
+    var method = func.length > 1 ? 'addMethod' : 'addProperty';
+
+    return Assertion[method](name, function() {
+        if (utils.flag(this, 'negate')) {
+            throw new Error("The 'negate' flag is used with a simple assertion '" + name + "'");
+        }
+
+        var ctx = {
+            obj: this._obj,
+            expect: expect.bind(this),
+            assert: this.assert.bind(this),
+            flag: utils.flag.bind(utils, this)
+        };
+        var args = [].slice.call(arguments);
+        args.unshift(ctx);
+        return func.apply(this, args);
+    });
+}
+
+/**
  * Extend an existing assertion.
  *
  * NOTE that `func()` must return a truthy value if it has implemented the
@@ -230,6 +269,7 @@ function wrapAssertion(name, func) {
 
 module.exports = {
     addAssertion: addAssertion,
+    addSimple: addSimple,
     extendAssertion: extendAssertion,
     wrapAssertion: wrapAssertion
 };
