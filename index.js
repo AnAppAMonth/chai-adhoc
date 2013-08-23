@@ -106,6 +106,15 @@ function addAssertion(name, func, getter) {
  * the assertion for the subject; or a falsy value if the subject doesn't meet its
  * criteria and `_super()` should be called.
  *
+ * TODO: the `adhoc.super` flag. If you use an assertion when extending it, your
+ * extending function will be called recursively. This may or may not be what you
+ * want, and may cause infinite recursion if not used carefully. This flag is
+ * supposed to solve this problem. However, it's debatable how to best implement
+ * it: if this flag is set, shall we start from the level below the current level
+ * when this assertion is used later in that language chain, or shall we start
+ * from the top level but omit the current level? I need to see real-world use
+ * cases for this scenario before I can decide.
+ *
  * @param {string} name - Name of the assertion to extend.
  * @param {assertionCallback} func - Function to be called to define the extension.
  */
