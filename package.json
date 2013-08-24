@@ -1,42 +1,37 @@
 {
-    "name": "chai-adhoc",
-
-    "version": "0.2.0",
-
-    "description": "Instantly extend Chai.js and define custom assertions! We provide a simpler API to work with.",
-
-    "author": "Feng Qiu <feng@ban90.com>",
-
-    "license": "MIT",
-
-    "keywords": ["chai", "plugin", "API", "custom", "assertion", "customize"],
-
-    "main" : "./index.js",
-
-    "scripts": {
-        "pretest": "jshint --verbose --config test/jshint.json ./*js test/*js",
-        "test": "make test"
-    },
-
-    "dependencies": {
-        "chai": "*"
-    },
-
-    "devDependencies": {
-        "mocha": "*",
-        "jshint": "*"
-    },
-
-    "engines": {
-        "node": ">=0.4.x"
-    },
-
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/halfninety/chai-adhoc.git"
-    },
-
-    "bugs": {
-        "url": "https://github.com/halfninety/chai-adhoc/issues"
-    }
+  "name": "chai-adhoc",
+  "version": "0.2.1",
+  "description": "Instantly extend Chai.js and define custom assertions! We provide a simpler API to work with.",
+  "author": "Feng Qiu <feng@ban90.com>",
+  "license": "MIT",
+  "keywords": [
+    "chai",
+    "plugin",
+    "API",
+    "custom",
+    "assertion",
+    "customize"
+  ],
+  "main": "./index.js",
+  "scripts": {
+    "pretest": "jshint --verbose --config test/jshint.json ./*js test/*js",
+    "test": "make test"
+  },
+  "dependencies": {
+    "chai": "*"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "jshint": "*"
+  },
+  "engines": {
+    "node": ">=0.4.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/halfninety/chai-adhoc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/halfninety/chai-adhoc/issues"
+  }
 }
