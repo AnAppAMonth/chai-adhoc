@@ -1,5 +1,6 @@
 
-var chai = require('chai'),
+var inspect = require('util').inspect,
+    chai = require('chai'),
     Assertion = chai.Assertion,
     utils;
 
@@ -267,9 +268,19 @@ function wrapAssertion(name, func) {
     });
 }
 
+function format(fmt/*, arguments*/) {
+    var args = arguments;
+    return fmt.replace(/#{(\d+)}/g, function(match, number) {
+        return number > 0 && number < args.length ?
+                inspect(args[number]) :
+                match;
+    });
+}
+
 module.exports = {
     addAssertion: addAssertion,
     addSimple: addSimple,
     extendAssertion: extendAssertion,
-    wrapAssertion: wrapAssertion
+    wrapAssertion: wrapAssertion,
+    format: format
 };
