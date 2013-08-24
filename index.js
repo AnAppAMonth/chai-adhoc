@@ -3,6 +3,22 @@ var inspect = require('util').inspect;
 var chai, utils, Assertion;
 var registered = false;
 
+var internals = ['constructor', 'assert'];
+var getters = [
+    'to',
+    'be',
+    'been',
+    'is',
+    'that',
+    'and',
+    'have',
+    'with',
+    'at',
+    'of',
+    'same'
+];
+var flags = ['not', 'deep', 'itself'];
+
 function adhoc(_chai, _utils) {
     chai = _chai;
     utils = _utils;
@@ -66,6 +82,78 @@ function adhoc(_chai, _utils) {
  */
 
 
+// Returns the type of a member on the assertion object's prototype, or false if it's
+// not a member.
+function getMemberType(member) {
+    var obj = new Assertion(1),
+        desc;
+
+    // First check whether this is really a member of obj.__proto__
+    /* jshint -W103 */
+    desc = Object.getOwnPropertyDescriptor(obj.__proto__, member);
+    if (desc) {
+        if (member[0] === '_') {
+            // This is obviously an internal member.
+            return 'an internal member';
+        } else {
+            if (desc.writable !== undefined) {
+                // This is a data property.
+                // There are two possibilities here:
+                // 1. an assertion method.
+                // 2. an internal member.
+                //
+                // However it doesn't seem like we can differentiate them, so we just
+                // maintain a list of internal members and search in the list.
+                if (internals.indexOf(member) === -1) {
+                    return 'an assertion method';
+                } else {
+                    return 'an internal member';
+                }
+            } else {
+                // This is an accessor property.
+                // There are four possibilities here:
+                // 1. a chainable getter (like `to`, `be`, etc).
+                // 2. a flag setter (like `not`, `deep`, etc).
+                // 2. an assertion property.
+                // 3. a chainable method.
+                //
+                // Chainable getters and flag setters are essentially assertion properties
+                // that always succeed, so it's impossible to identify them programatically.
+                // We maintain lists for them and search in the lists.
+                //
+                // To differentiate an assertion property and a chainable method:
+                // 1. When accessing a chainable method, it sets a flag and returns a function.
+                // 2. When accessing an assertion property, the assertion is evaluated, it
+                //    either succeeds and returns an object, or fails and throws an exception.
+                if (getters.indexOf(member) >= 0) {
+                    return 'a chainable getter';
+                } else if (flags.indexOf(member) >= 0) {
+                    return 'a flag setter';
+                } else {
+                    // Either an assertion property or a chainable method.
+                    var valid = true;
+                    try {
+                        if (typeof obj[member] === 'function') {
+                            // This is a chainable method.
+                            valid = false;
+                        }
+                    } catch (e) {}
+
+                    if (valid) {
+                        // This is an assertion property.
+                        return 'an assertion property';
+                    } else {
+                        return 'a chainable method';
+                    }
+                }
+            }
+        }
+    } else {
+        // This isn't a member.
+        return false;
+    }
+}
+
 // Create a new `Assertion` with an extra `flags()` method.
 var expect = function(expr, msg, neg_msg, expected, actual) {
     var ass = new Assertion(expr, msg);
@@ -105,18 +193,29 @@ var expect = function(expr, msg, neg_msg, expected, actual) {
 function addAssertion(name, func, getter) {
     // First make sure this plugin is already used.
     if (!registered) {
-        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+        throw new TypeError('Plugin not registered by calling chai.use() before being used');
+    }
+
+    // Make sure arguments are valid.
+    if (typeof name !== 'string') {
+        throw new TypeError('name is not a string');
+    }
+    if (typeof func !== 'function') {
+        throw new TypeError('func is not a function');
     }
 
     // Make sure an assertion with this name doesn't already exist.
-    var ass = new Assertion(1);
-    if (ass[name] !== undefined) {
+    if (getMemberType(name)) {
         throw new TypeError('Assertion "' + name + '" already exists');
     }
 
     var method, getterWrapper;
 
     if (getter) {
+        if (typeof getter !== 'function') {
+            throw new TypeError('getter is not a function');
+        }
+
         method = 'addChainableMethod';
         getterWrapper = function() {
             return getter(utils.flag.bind(utils, this));
@@ -154,12 +253,19 @@ function addAssertion(name, func, getter) {
 function addSimple(name, func) {
     // First make sure this plugin is already used.
     if (!registered) {
-        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+        throw new TypeError('Plugin not registered by calling chai.use() before being used');
+    }
+
+    // Make sure arguments are valid.
+    if (typeof name !== 'string') {
+        throw new TypeError('name is not a string');
+    }
+    if (typeof func !== 'function') {
+        throw new TypeError('func is not a function');
     }
 
     // Make sure an assertion with this name doesn't already exist.
-    var ass = new Assertion(1);
-    if (ass[name] !== undefined) {
+    if (getMemberType(name)) {
         throw new TypeError('Assertion "' + name + '" already exists');
     }
 
@@ -204,16 +310,30 @@ function addSimple(name, func) {
 function extendAssertion(name, func) {
     // First make sure this plugin is already used.
     if (!registered) {
-        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+        throw new TypeError('Plugin not registered by calling chai.use() before being used');
+    }
+
+    // Make sure arguments are valid.
+    if (typeof name !== 'string') {
+        throw new TypeError('name is not a string');
+    }
+    if (typeof func !== 'function') {
+        throw new TypeError('func is not a function');
     }
 
     // Check whether the assertion to be overwritten is a property or a method.
-    var ass = new Assertion(1),
-        method;
-    if (ass[name] === undefined) {
-        throw new TypeError('Assertion "' + name + '" doesn\'t exist');
+    var method,
+        type = getMemberType(name);
+    if (type) {
+        if (type === 'an assertion method') {
+            method = 'overwriteMethod';
+        } else if (type === 'an assertion property') {
+            method = 'overwriteProperty';
+        } else {
+            throw new TypeError('Member "' + name + '" is ' + type + ' and should not be overwritten');
+        }
     } else {
-        method = typeof ass[name] === 'function' ? 'overwriteMethod' : 'overwriteProperty';
+        throw new TypeError('Assertion "' + name + '" doesn\'t exist');
     }
 
     return Assertion[method](name, function(_super) {
@@ -253,16 +373,30 @@ function extendAssertion(name, func) {
 function wrapAssertion(name, func) {
     // First make sure this plugin is already used.
     if (!registered) {
-        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+        throw new TypeError('Plugin not registered by calling chai.use() before being used');
+    }
+
+    // Make sure arguments are valid.
+    if (typeof name !== 'string') {
+        throw new TypeError('name is not a string');
+    }
+    if (typeof func !== 'function') {
+        throw new TypeError('func is not a function');
     }
 
     // Check whether the assertion to be overwritten is a property or a method.
-    var ass = new Assertion(1),
-        method;
-    if (ass[name] === undefined) {
-        throw new TypeError('Assertion "' + name + '" doesn\'t exist');
+    var method,
+        type = getMemberType(name);
+    if (type) {
+        if (type === 'an assertion method') {
+            method = 'overwriteMethod';
+        } else if (type === 'an assertion property') {
+            method = 'overwriteProperty';
+        } else {
+            throw new TypeError('Member "' + name + '" is ' + type + ' and should not be overwritten');
+        }
     } else {
-        method = typeof ass[name] === 'function' ? 'overwriteMethod' : 'overwriteProperty';
+        throw new TypeError('Assertion "' + name + '" doesn\'t exist');
     }
 
     return Assertion[method](name, function(_super) {

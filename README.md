@@ -4,8 +4,7 @@ Chai Adhoc
 *Chai*'s API is designed to be used by plugins, and not optimzied for ad-hoc
 creation of custom assertions. This *Chai* plugin simplifies *Chai*'s plugin
 API and makes it easier to create new assertions or modify existing ones in
-an ad-hoc way. But really, the various helpers it provides make plugin
-creation simpler, too.
+an ad-hoc way.
 
 Do you find yourself creating functions to group tests and then use the function
 to test multiple subjects? Consider creating a custom assertion instead! By
@@ -17,6 +16,13 @@ benefits:
 
 Why don't people do this? Because it's easier to create a function than defining
 a custom assertion. Not any more!
+
+For plugin authors, the various helpers this plugin provides make plugin creation
+simpler and less error-prone, too. For example, *Chai* doesn't support overwriting
+chainable methods, but yet doesn't prevent you from doing it. The problem is, after
+overwriting a chainable method, *Chai* as a whole doesn't work correctly (ie, it
+doesn't throw exceptions when it should). This plugin checks whether you are trying
+to overwrite a chainable method and doesn't allow you do it.
 
 
 Install
