@@ -1,10 +1,13 @@
 
 /* global describe, it */
 /* jshint -W030 */
-var chai = require('../'),
-    expect = require('chai').expect;
+var chai = require('chai'),
+    adhoc = require('../'),
+    expect = chai.expect;
 
-chai.addSimple('aBitMoreThan', function(ctx, n) {
+chai.use(adhoc);
+
+adhoc.addSimple('aBitMoreThan', function(ctx, n) {
     ctx.expect(ctx.obj).to.be.a('number').within(n, 1.5 * n);
 });
 

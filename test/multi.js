@@ -1,11 +1,14 @@
 
 /* global describe, it */
 /* jshint -W030 */
-var chai = require('../'),
-    expect = require('chai').expect;
+var chai = require('chai'),
+    adhoc = require('../'),
+    expect = chai.expect;
+
+chai.use(adhoc);
 
 // Extend `below` 3 times
-chai.extendAssertion('below', function(ctx, n) {
+adhoc.extendAssertion('below', function(ctx, n) {
     if (ctx.obj >= 1000 && n >= 1000) {
         // Require a difference of at least 100 for `below` to pass
         ctx.assert(
@@ -18,7 +21,7 @@ chai.extendAssertion('below', function(ctx, n) {
     return false;
 });
 
-chai.extendAssertion('below', function(ctx, n) {
+adhoc.extendAssertion('below', function(ctx, n) {
     if (ctx.obj >= 5000 && n >= 5000) {
         // Require a difference of at least 500 for `below` to pass
         ctx.assert(
@@ -31,7 +34,7 @@ chai.extendAssertion('below', function(ctx, n) {
     return false;
 });
 
-chai.extendAssertion('below', function(ctx, n) {
+adhoc.extendAssertion('below', function(ctx, n) {
     if (ctx.obj >= 10000 && n >= 10000) {
         // Require a difference of at least 1000 for `below` to pass
         ctx.assert(
@@ -45,19 +48,19 @@ chai.extendAssertion('below', function(ctx, n) {
 });
 
 // Wrap `below` 3 times
-chai.wrapAssertion('below', function(error, ctx, n) {
+adhoc.wrapAssertion('below', function(error, ctx, n) {
     if (error) {
         error.message  = 'Prefix 1: ' + error.message;
     }
 });
 
-chai.wrapAssertion('below', function(error, ctx, n) {
+adhoc.wrapAssertion('below', function(error, ctx, n) {
     if (error) {
         error.message  = 'Prefix 2: ' + error.message;
     }
 });
 
-chai.wrapAssertion('below', function(error, ctx, n) {
+adhoc.wrapAssertion('below', function(error, ctx, n) {
     if (error) {
         error.message  = 'Prefix 3: ' + error.message;
     }

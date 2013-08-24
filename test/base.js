@@ -1,8 +1,11 @@
 
 /* global describe, it */
 /* jshint -W030 */
-var chai = require('../'),
-    expect = require('chai').expect;
+var chai = require('chai'),
+    adhoc = require('../'),
+    expect = chai.expect;
+
+chai.use(adhoc);
 
 // Code to test
 function Model (type) {
@@ -30,7 +33,7 @@ joe.set('id', 'not a number');
 // Define custom assertions
 
 // Property `model`
-chai.addAssertion('model', function(ctx) {
+adhoc.addAssertion('model', function(ctx) {
     ctx.assert(
         ctx.obj instanceof Model
         , 'expected #{this} to be a Model'
@@ -40,7 +43,7 @@ chai.addAssertion('model', function(ctx) {
 
 // Method `model2`
 var flagList = [];
-chai.addAssertion('model2', function(ctx, type) {
+adhoc.addAssertion('model2', function(ctx, type) {
     flagList.push(ctx.flag('negate'));
     ctx.expect(ctx.obj, 'model type check').flags().to.be.instanceof(Model);
     ctx.expect(ctx.obj, 'model type check').flags('negate').to.be.instanceof(Model);
@@ -54,7 +57,7 @@ chai.addAssertion('model2', function(ctx, type) {
 });
 
 // Chainable method `age`
-chai.addAssertion('age', function(ctx, n) {
+adhoc.addAssertion('age', function(ctx, n) {
     // make sure we are working with a model
     ctx.expect(ctx.obj).to.be.instanceof(Model);
 
@@ -75,7 +78,7 @@ chai.addAssertion('age', function(ctx, n) {
 });
 
 // Extend property `ok`
-chai.extendAssertion('ok', function(ctx) {
+adhoc.extendAssertion('ok', function(ctx) {
     if (ctx.obj && ctx.obj instanceof Model) {
         ctx.expect(ctx.obj).to.have.deep.property('_attrs.id');
         ctx.expect(ctx.obj._attrs.id, 'model assert ok id type').flags().a('number');
@@ -86,7 +89,7 @@ chai.extendAssertion('ok', function(ctx) {
 });
 
 // Extend method `above`
-chai.extendAssertion('above', function(ctx, n) {
+adhoc.extendAssertion('above', function(ctx, n) {
     if (ctx.flag('model.age')) {
         // first we assert we are actually working with a model
         ctx.expect(ctx.obj).instanceof(Model);
@@ -109,7 +112,7 @@ chai.extendAssertion('above', function(ctx, n) {
 });
 
 // Wrap the extended method `above`
-chai.wrapAssertion('above', function(error, ctx, n) {
+adhoc.wrapAssertion('above', function(error, ctx, n) {
     if (error) {
         // Suppress the error if both operands are > 10000.
         if (ctx.obj > 10000 && n > 10000) {
@@ -125,10 +128,10 @@ describe('New assertions', function() {
     it('should not be added if they already exist', function() {
         var noop = function() {};
         expect(function() {
-            chai.addAssertion('contain', noop);
+            adhoc.addAssertion('contain', noop);
         }).to.throw(TypeError);
         expect(function() {
-            chai.addAssertion('above', noop, noop);
+            adhoc.addAssertion('above', noop, noop);
         }).to.throw(TypeError);
     });
 });
@@ -137,13 +140,13 @@ describe('Non-existent assertions', function() {
     it('should not be extended', function() {
         var noop = function() {};
         expect(function() {
-            chai.extendAssertion('idontexist', noop);
+            adhoc.extendAssertion('idontexist', noop);
         }).to.throw(TypeError);
     });
     it('should not be wrapped', function() {
         var noop = function() {};
         expect(function() {
-            chai.wrapAssertion('idontexist', noop);
+            adhoc.wrapAssertion('idontexist', noop);
         }).to.throw(TypeError);
     });
 });

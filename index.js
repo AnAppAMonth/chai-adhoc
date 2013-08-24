@@ -1,12 +1,16 @@
 
-var inspect = require('util').inspect,
-    chai = require('chai'),
-    Assertion = chai.Assertion,
-    utils;
+var inspect = require('util').inspect;
+var chai, utils, Assertion;
+var registered = false;
 
-chai.use(function (_chai, utilities) {
-    utils = utilities;
-});
+function adhoc(_chai, _utils) {
+    chai = _chai;
+    utils = _utils;
+    Assertion = chai.Assertion;
+    if (chai && utils && Assertion) {
+        registered = true;
+    }
+}
 
 /**
  * Function provided by the user in an `addAssertion()` call.
@@ -99,7 +103,12 @@ var expect = function(expr, msg, neg_msg, expected, actual) {
  *                                  as a property. If set, a chainable method is created.
  */
 function addAssertion(name, func, getter) {
-    // First make sure an assertion with this name doesn't already exist.
+    // First make sure this plugin is already used.
+    if (!registered) {
+        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+    }
+
+    // Make sure an assertion with this name doesn't already exist.
     var ass = new Assertion(1);
     if (ass[name] !== undefined) {
         throw new TypeError('Assertion "' + name + '" already exists');
@@ -143,7 +152,12 @@ function addAssertion(name, func, getter) {
  *                                   is created; otherwise a method is created.
  */
 function addSimple(name, func) {
-    // First make sure an assertion with this name doesn't already exist.
+    // First make sure this plugin is already used.
+    if (!registered) {
+        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+    }
+
+    // Make sure an assertion with this name doesn't already exist.
     var ass = new Assertion(1);
     if (ass[name] !== undefined) {
         throw new TypeError('Assertion "' + name + '" already exists');
@@ -188,6 +202,11 @@ function addSimple(name, func) {
  * @param {extendAssertionCallback} func - Function to implement the extension.
  */
 function extendAssertion(name, func) {
+    // First make sure this plugin is already used.
+    if (!registered) {
+        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+    }
+
     // Check whether the assertion to be overwritten is a property or a method.
     var ass = new Assertion(1),
         method;
@@ -232,6 +251,11 @@ function extendAssertion(name, func) {
  * @param {wrapAssertionCallback} func - The wrapper function.
  */
 function wrapAssertion(name, func) {
+    // First make sure this plugin is already used.
+    if (!registered) {
+        throw new TypeError('You must register this plugin by calling chai.use(adhoc) before using it');
+    }
+
     // Check whether the assertion to be overwritten is a property or a method.
     var ass = new Assertion(1),
         method;
@@ -277,10 +301,10 @@ function format(fmt/*, arguments*/) {
     });
 }
 
-module.exports = {
-    addAssertion: addAssertion,
-    addSimple: addSimple,
-    extendAssertion: extendAssertion,
-    wrapAssertion: wrapAssertion,
-    format: format
-};
+adhoc.addAssertion = addAssertion;
+adhoc.addSimple = addSimple;
+adhoc.extendAssertion = extendAssertion;
+adhoc.wrapAssertion = wrapAssertion;
+adhoc.format = format;
+
+module.exports = adhoc;

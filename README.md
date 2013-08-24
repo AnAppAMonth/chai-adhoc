@@ -2,9 +2,10 @@ Chai Adhoc
 ==========
 
 *Chai*'s API is designed to be used by plugins, and not optimzied for ad-hoc
-creation of custom assertions. This module simplifies *Chai*'s plugin API and
-makes it easier to create new assertions or modify existing ones in an ad-hoc
-way.
+creation of custom assertions. This *Chai* plugin simplifies *Chai*'s plugin
+API and makes it easier to create new assertions or modify existing ones in
+an ad-hoc way. But really, the various helpers it provides make plugin
+creation simpler, too.
 
 Do you find yourself creating functions to group tests and then use the function
 to test multiple subjects? Consider creating a custom assertion instead! By
@@ -83,7 +84,10 @@ Chai Adhoc
 ----------
 
 ```js
-var adhoc = require('chai-adhoc');
+var chai = require('chai'),
+    adhoc = require('chai-adhoc');
+
+chai.use(adhoc);
 
 adhoc.addAssertion('model', function(ctx) {
     ctx.assert(
