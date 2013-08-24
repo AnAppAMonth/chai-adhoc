@@ -119,7 +119,7 @@ adhoc.extendAssertion('ok', function(ctx) {
 Documentation
 =============
 
-This package contains 4 methods:
+This package contains 5 methods:
 
 1.  `addAssertion()`
 
@@ -230,6 +230,14 @@ This package contains 4 methods:
     In the first two cases, an error is thrown, the assertion fails; in the last case, the
     error is suppressed, and the assertion succeeds.
 
+5. `format()`
+
+   Utility method to help you format error messages. The first argument is the string to
+   format: it can contain special sequences `#{1}`, `#{2}`, etc, which will be replaced
+   with the first, second, etc, argument passed to the method after the string, respectively.
+
+   Note that `util.inspect()` is called on each argument before it's used to replace its
+   corresponding placeholder in the string to format.
 
 License
 =======
