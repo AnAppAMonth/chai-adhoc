@@ -1,6 +1,6 @@
 {
   "name": "chai-adhoc",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Instantly extend Chai.js and define custom assertions! We provide a simpler API to work with.",
   "author": "Feng Qiu <feng@ban90.com>",
   "license": "MIT",
