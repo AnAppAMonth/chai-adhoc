@@ -20,9 +20,11 @@ a custom assertion. Not any more!
 For plugin authors, the various helpers this plugin provides make plugin creation
 simpler and less error-prone, too. For example, *Chai* doesn't support overwriting
 chainable methods, but yet doesn't prevent you from doing it. The problem is, after
-overwriting a chainable method, *Chai* as a whole doesn't work correctly (ie, it
-doesn't throw exceptions when it should). This plugin checks whether you are trying
-to overwrite a chainable method and doesn't allow you do it.
+overwriting a chainable method, the flag that is set by its property function will
+always be set even in newly created assertion objects, so *Chai* no longer works
+correctly (pure flag-setter properties like `not` don't have this problem). This
+plugin checks whether you are trying to overwrite a chainable method and doesn't
+allow you do it.
 
 
 Install
